@@ -15,7 +15,7 @@ UNFOLDED_PERSON as (
     FROM 
         UNFOLDED_PERSON
     WHERE 
-        id in (3, 9)
+        id in (9, 8)
 
     
     UNION ALL
@@ -38,11 +38,11 @@ UNFOLDED_PERSON as (
 ),
 
 person1_data as (
-    select * from Ancestors where id = 3
+    select * from Ancestors where id = 9
 ),
 
 person2_data as (
-    select * from Ancestors where id = 9
+    select * from Ancestors where id = 8
 ),
 
 linked_ancestors as (
