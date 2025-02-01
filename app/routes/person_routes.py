@@ -2,28 +2,56 @@ from flask import Blueprint, abort, make_response, request, Response, jsonify
 from app.models.person import Person
 from app.db import db
 from app.routes.route_utilities import validate_model
+from sqlalchemy import text
 import os
 
 person_bp = Blueprint("person", __name__, url_prefix="/persons")
 
-@person_bp.get("/search")
-def search_person():
-    name_query = request.args.get("name", "")
-    if not name_query:
-        return make_response([], 200)
+@person_bp.get("/ancestor")
+def run_sql_file():
+    # Path to your SQL file
+    sql_file_path = 'family_tree_db_query.sql'
 
-    # Filter by name (assuming partial match). 
-    # Adjust your query logic to suit your needs (case-insensitive, etc.).
-    matching_persons = (
-        db.session.query(Person)
-        .filter(Person.name.ilike(f"%{name_query}%"))
-        .all()
-    )
+    current_path = os.getcwd()
 
+    if not os.path.exists(sql_file_path):
+        return make_response({"error": "SQL file not found" + current_path}, 404)
+
+
+    # Read the SQL file
+    with open(sql_file_path, 'r') as file:
+        sql_query = file.read()
+
+    # Execute the SQL query
+    result = db.session.execute(text(sql_query))
+    db.session.commit()
+
+    # Assuming the query returns rows that can be mapped to the Person model
+    persons = result.fetchall()
     # Convert each person to dictionary
-    results = [person.to_dict() for person in matching_persons]
+    
+    results = [row[0] for row in persons]
     response_body = results
     return make_response(response_body, 200)
+
+# @person_bp.get("/search")
+# def search_person():
+#     name_query = request.args.get("name", "")
+#     if not name_query:
+#         return make_response([], 200)
+
+#     # Filter by name (assuming partial match). 
+#     # Adjust your query logic to suit your needs (case-insensitive, etc.).
+#     matching_persons = (
+#         db.session.query(Person)
+#         .filter(Person.name.ilike(f"%{name_query}%"))
+#         .all()
+#     )
+
+#     # Convert each person to dictionary
+#     results = [person.to_dict() for person in matching_persons]
+#     response_body = results
+#     return make_response(response_body, 200)
 
 @person_bp.get("")
 def get_all_persons():
@@ -53,7 +81,6 @@ def create_person():
     father_id = request_body.get("father_id", None)
     mother_id = request_body.get("mother_id", None)
     place_of_birth = request_body.get("place_of_birth", None)
-    
     
     new_person = Person(name=name, dob=dob, father_id=father_id, mother_id=mother_id, place_of_birth=place_of_birth)
     db.session.add(new_person)
