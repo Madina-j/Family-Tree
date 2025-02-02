@@ -8,7 +8,10 @@ import os
 person_bp = Blueprint("person", __name__, url_prefix="/persons")
 
 @person_bp.get("/ancestor")
+#@app.route('/login', methods=['GET'])
 def run_sql_file():
+    child1 = request.args.get('key1')
+    child2 = request.args.get('key2')
     # Path to your SQL file
     sql_file_path = 'family_tree_db_query.sql'
 
@@ -23,35 +26,44 @@ def run_sql_file():
         sql_query = file.read()
 
     # Execute the SQL query
-    result = db.session.execute(text(sql_query))
+    result = db.session.execute(text(sql_query), {'id_var1': child1, 'id_var2': child2})
     db.session.commit()
 
-    # Assuming the query returns rows that can be mapped to the Person model
     persons = result.fetchall()
-    # Convert each person to dictionary
-    
-    results = [row[0] for row in persons]
+    # /////////////////////////////////////// 
+    # find both ancestors
+    # results =[row[0] for row in persons]
+    # //////////////////////////////////
+    # find one ancestor
+    #results = len(persons) > 0 ? [persons[0][0]] : {}
+    if (len(persons) > 0):
+        results = [persons[0][0]]
+    else:
+        results = []
+    # //////////////////////////////////
+
+
     response_body = results
     return make_response(response_body, 200)
 
-# @person_bp.get("/search")
-# def search_person():
-#     name_query = request.args.get("name", "")
-#     if not name_query:
-#         return make_response([], 200)
+@person_bp.get("/search")
+def search_person():
+    name_query = request.args.get("name", "")
+    if not name_query:
+        return make_response([], 200)
 
-#     # Filter by name (assuming partial match). 
-#     # Adjust your query logic to suit your needs (case-insensitive, etc.).
-#     matching_persons = (
-#         db.session.query(Person)
-#         .filter(Person.name.ilike(f"%{name_query}%"))
-#         .all()
-#     )
+    # Filter by name (assuming partial match). 
+    # Adjust your query logic to suit your needs (case-insensitive, etc.).
+    matching_persons = (
+        db.session.query(Person)
+        .filter(Person.name.ilike(f"%{name_query}%"))
+        .all()
+    )
 
-#     # Convert each person to dictionary
-#     results = [person.to_dict() for person in matching_persons]
-#     response_body = results
-#     return make_response(response_body, 200)
+    # Convert each person to dictionary
+    results = [person.to_dict() for person in matching_persons]
+    response_body = results
+    return make_response(response_body, 200)
 
 @person_bp.get("")
 def get_all_persons():
