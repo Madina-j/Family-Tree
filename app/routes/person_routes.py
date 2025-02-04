@@ -46,6 +46,49 @@ def run_sql_file():
     response_body = results
     return make_response(response_body, 200)
 
+@person_bp.get("/ancestor2")
+# #@app.route('/login', methods=['GET'])
+def run_sql_file2():
+    child1 = request.args.get('key1')
+    child2 = request.args.get('key2')
+    # Path to your SQL file
+    sql_file_path = 'ancestor_db.sql'
+
+    current_path = os.getcwd()
+
+    if not os.path.exists(sql_file_path):
+        return make_response({"error": "SQL file not found" + current_path}, 404)
+
+
+    # Read the SQL file
+    with open(sql_file_path, 'r') as file:
+        sql_query = file.read()
+
+    # Execute the SQL query
+    result = db.session.execute(text(sql_query), {'id_var1': child1, 'id_var2': child2})
+    db.session.commit()
+
+    persons = result.fetchall()
+    # /////////////////////////////////////// 
+    # find both ancestors
+    # results =[row[0] for row in persons]
+    # //////////////////////////////////
+    # find one ancestor
+    #results = len(persons) > 0 ? [persons[0][0]] : {}
+    #if (len(persons) > 0):
+    #    results = [persons[0][0]]
+    #else:
+    #    results = []
+    # //////////////////////////////////
+
+
+    #response_body = results
+    if (len(persons) > 0):
+        response_body = [persons[0][2], persons[0][3]]
+    else:
+        response_body = []
+    return make_response(response_body, 200)
+
 @person_bp.get("/search")
 def search_person():
     name_query = request.args.get("name", "")
